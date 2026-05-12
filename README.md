@@ -2,26 +2,10 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://python.org)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange)](https://tensorflow.org)
-[![Gradio](https://img.shields.io/badge/Gradio-UI-purple)](https://gradio.app)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![OpenCV](https://img.shields.io/badge/OpenCV-4.8%2B-green)](https://opencv.org)
+[![License](https://img.shields.io/badge/License-MIT-brightgreen)](LICENSE)
 
-A 3-class face mask detection system built with **EfficientNetB0** transfer learning. Classifies whether a person is wearing a mask correctly, incorrectly, or not at all.
-
-**Live Demo**: [Deploy on Hugging Face Spaces](#deployment)
-
----
-
-## Model Comparison Results
-
-Trained on the same dataset for 8 epochs each:
-
-| Model | Params | Size | Val Accuracy | Time |
-|---|---|---|---|---|
-| YOLOv8n-cls (TF) | 1.11 M | 13.6 MB | 94.88% | 182 s |
-| MobileNetV2 | 2.26 M | 9.5 MB | 84.81% | 155 s |
-| **EfficientNetB0** | **4.06 M** | **16.9 MB** | **98.33%** | 205 s |
-
-**Winner: EfficientNetB0** — highest accuracy. TFLite FP16 quantization brings it down to **8.4 MB** with less than 0.3% accuracy drop.
+Real-time 3-class face mask detection using your webcam. Detects faces with an SSD deep learning model and classifies mask usage with a fine-tuned EfficientNetB0.
 
 ---
 
@@ -29,32 +13,64 @@ Trained on the same dataset for 8 epochs each:
 
 | Label | Description |
 |---|---|
-| `with_mask` | Face mask worn correctly over nose and mouth |
-| `mask_weared_incorrect` | Mask on chin, neck, or below the nose |
-| `without_mask` | No face mask present |
+| **Mask On** | Face mask worn correctly over nose and mouth |
+| **Mask Worn Incorrectly** | Mask on chin, neck, or below the nose |
+| **No Mask** | No face mask present |
+
+---
+
+## How It Works
+
+```
+Webcam frame
+     |
+     v
+SSD Face Detector (res10_300x300 Caffe model)
+     |
+     v
+Crop each detected face
+     |
+     v
+EfficientNetB0 TFLite FP16 — 3-class classification
+     |
+     v
+Draw bounding box + label on frame
+     |
+     v
+Live OpenCV window  (press Q to quit)
+```
+
+---
+
+## Model Comparison (8-epoch benchmark)
+
+| Model | Val Accuracy | Size | Time |
+|---|---|---|---|
+| YOLOv8n-cls (TF) | 94.88% | 13.6 MB | 182 s |
+| MobileNetV2 | 84.81% | 9.5 MB | 155 s |
+| **EfficientNetB0** | **98.33%** | **8.4 MB** | 205 s |
+
+**Winner: EfficientNetB0** — deployed as TFLite FP16 (8.4 MB).
 
 ---
 
 ## Architecture
 
 ```
-Input (224x224 RGB, [0-255])
+Input (224x224, RGB, [0-255])
      |
      v
 Data Augmentation (flip, rotate, zoom, brightness, contrast)
      |
      v
-EfficientNetB0 Backbone (ImageNet pretrained, includes preprocessing)
+EfficientNetB0 Backbone — ImageNet pretrained, preprocesses internally
      |
      v
-GlobalAveragePooling2D
-BatchNormalization
-Dropout(0.4)
-Dense(256, swish, L2=1e-4)
-Dropout(0.2)
+GlobalAveragePooling2D -> BatchNorm -> Dropout(0.4)
+Dense(256, swish, L2) -> Dropout(0.2)
      |
      v
-Dense(3, softmax) -> [with_mask, mask_weared_incorrect, without_mask]
+Dense(3, softmax) -> [with_mask | mask_weared_incorrect | without_mask]
 ```
 
 ### Two-Phase Training
@@ -73,15 +89,19 @@ Dense(3, softmax) -> [with_mask, mask_weared_incorrect, without_mask]
 
 ```
 face-mask-detector/
-├── facemask_training.ipynb      # full training pipeline (run on Kaggle)
-├── app.py                       # Gradio web UI — deploy this
+├── app.py                        # main app — run this for real-time detection
 ├── requirements.txt
 ├── README.md
+├── facemask-training.ipynb       # full training notebook (run on Kaggle)
+├── train_optimized.py            # standalone training script
+├── face_detector/
+│   ├── deploy.prototxt           # SSD face detector config
+│   └── res10_300x300_ssd_iter_140000.caffemodel   # SSD face detector weights
 └── models/
-    ├── face_mask_fp16.tflite        # deployment model (8.4 MB)  <-- used by app.py
-    ├── face_mask_efficientnet.keras # full Keras model (28 MB)
-    ├── best_model.keras             # best checkpoint from training
-    ├── comparison_results.json      # benchmark numbers
+    ├── face_mask_fp16.tflite     # deployment model (8.4 MB)  ← used by app.py
+    ├── face_mask_efficientnet.keras
+    ├── best_model.keras
+    ├── comparison_results.json
     ├── comparison_chart.png
     ├── training_curves.png
     ├── confusion_matrix.png
@@ -94,61 +114,50 @@ face-mask-detector/
 
 ---
 
-## Quick Start
+## Setup and Run
 
-### 1. Clone and install
+### Step 1 — Clone the repo
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/face-mask-detector.git
+git clone https://github.com/rajneeshbabu/face-mask-detector.git
 cd face-mask-detector
-pip install -r requirements.txt
 ```
 
-### 2. Run the web app locally
+### Step 2 — Create a virtual environment
+
+```bash
+python -m venv .venv
+source .venv/bin/activate        # macOS / Linux
+# .venv\Scripts\activate         # Windows
+```
+
+### Step 3 — Install dependencies
+
+```bash
+pip install -r requirements.txt
+pip install tensorflow            # skip if already installed
+```
+
+### Step 4 — Run the detector
 
 ```bash
 python app.py
-# Opens at http://localhost:7860
 ```
 
-The app loads `models/face_mask_fp16.tflite` automatically.
-
-### 3. Train from scratch (Kaggle)
-
-1. Go to [kaggle.com](https://kaggle.com) and create a new notebook
-2. Add dataset: `vijaykumar1799/face-mask-detection`
-3. Upload `facemask_training.ipynb` and run all cells
-4. Download the output files from `/kaggle/working/`
+A window opens showing your webcam feed with live detection. Press **Q** to quit.
 
 ---
 
-## Deployment
+## Train From Scratch (Kaggle)
 
-### Hugging Face Spaces (free, public URL)
+1. Go to [kaggle.com](https://kaggle.com) and create a new notebook
+2. Add the dataset: [vijaykumar1799/face-mask-detection](https://www.kaggle.com/datasets/vijaykumar1799/face-mask-detection)
+3. Upload `facemask-training.ipynb` and click **Run All**
+4. Download the outputs from `/kaggle/working/` — copy them into `models/`
 
-1. Create a new Space at [huggingface.co/spaces](https://huggingface.co/spaces)
-2. Set **SDK = Gradio**
-3. Upload these three files:
-   - `app.py`
-   - `requirements.txt`
-   - `face_mask_fp16.tflite`
-4. Your app goes live automatically
-
-### Deploy from GitHub to Hugging Face
-
-```bash
-# One-time setup: link your GitHub repo to a HF Space
-# In your HF Space settings -> Repository -> Link to GitHub repo
-# Every push to main will auto-redeploy the Space
-```
-
-### Local (with public tunnel)
-
-```bash
-# Edit app.py: set share=True in demo.launch()
-python app.py
-# Gradio prints a public URL valid for 72 hours
-```
+The notebook runs a full two-phase EfficientNetB0 training and exports:
+- `face_mask_efficientnet.keras` — full Keras model
+- `face_mask_fp16.tflite` — quantized deployment model (used by app.py)
 
 ---
 
@@ -156,8 +165,8 @@ python app.py
 
 - **Source**: [vijaykumar1799/face-mask-detection](https://www.kaggle.com/datasets/vijaykumar1799/face-mask-detection) on Kaggle
 - **Classes**: `with_mask`, `mask_weared_incorrect`, `without_mask`
-- **Split**: 80% train / 20% validation (stratified)
-- **Preprocessing**: Resize to 224x224, raw [0-255] pixel values (EfficientNetB0 normalizes internally)
+- **Total**: ~3,800 labeled face images
+- **Split**: 80% train / 20% validation (stratified, class-balanced)
 
 ---
 
@@ -167,4 +176,4 @@ MIT License — free to use, modify, and distribute.
 
 ---
 
-*Built with TensorFlow · EfficientNetB0 · Gradio*
+*Built with TensorFlow · EfficientNetB0 · OpenCV SSD · imutils*
