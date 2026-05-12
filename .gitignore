@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Training data (too large for GitHub)
+train/
+
+# Large model files — excluded from git (upload to HF Spaces manually)
+models/*.keras
+
+# face_mask_fp16.tflite (8.4 MB) is small enough to commit — kept tracked
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+
+# Kaggle credentials
+kaggle.json

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "YOLOv8n_cls_TF",
+    "params_M": 1.11,
+    "size_MB": 13.63,
+    "val_acc_pct": 94.88,
+    "best_val_acc": 94.88,
+    "time_s": 181.8
+  },
+  {
+    "name": "MobileNetV2",
+    "params_M": 2.26,
+    "size_MB": 9.53,
+    "val_acc_pct": 84.81,
+    "best_val_acc": 84.81,
+    "time_s": 154.8
+  },
+  {
+    "name": "EfficientNetB0",
+    "params_M": 4.06,
+    "size_MB": 16.93,
+    "val_acc_pct": 98.33,
+    "best_val_acc": 98.33,
+    "time_s": 205.2
+  }
+]
