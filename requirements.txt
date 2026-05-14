@@ -1,11 +1,6 @@
-# Face Mask Detector — Local Requirements
-# Activate .venv first:  source .venv/bin/activate
-# Then install:          pip install -r requirements.txt
-
-opencv-python>=4.8.0
-imutils>=0.5.3
+opencv-python-headless>=4.8.0
 numpy>=1.24.0
 Pillow>=10.0.0
-
-# TensorFlow already installed in .venv from training
-# If starting fresh: pip install tensorflow
+streamlit>=1.35.0
+# tflite-runtime is used if available; tensorflow is the fallback on Cloud
+tensorflow-cpu>=2.15.0
