@@ -5,16 +5,19 @@
 [![OpenCV](https://img.shields.io/badge/OpenCV-4.8%2B-green)](https://opencv.org)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange)](https://tensorflow.org)
 [![License](https://img.shields.io/badge/License-MIT-brightgreen)](LICENSE)
+[![Project Page](https://img.shields.io/badge/Project%20Page-GitHub%20Pages-222?logo=github)](https://rajneeshbabu.github.io/face-mask-detector/)
 
 Real-time 3-class face mask detection — run it in your browser or directly from your webcam. Detects faces with an OpenCV SSD model and classifies mask usage with a fine-tuned EfficientNetB0 (**98.33% accuracy**).
 
 ---
 
-## 🚀 Live Demo
+## 🚀 Demo & Project Page
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://face-mask-detector-hdzvzy2kpppk3cu7m46byj.streamlit.app)
 
 👉 **[Launch Streamlit App →](https://face-mask-detector-hdzvzy2kpppk3cu7m46byj.streamlit.app)**
+
+🌐 **[View Project Page →](https://rajneeshbabu.github.io/face-mask-detector/)**
 
 Upload an image or use your webcam directly in the browser — no installation required.
 
