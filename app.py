@@ -15,13 +15,16 @@ from PIL import Image, ImageDraw, ImageFont
 
 # ── TFLite interpreter ────────────────────────────────────────────────────────
 try:
-    from tflite_runtime.interpreter import Interpreter
+    from ai_edge_litert.interpreter import Interpreter      # ai-edge-litert (Google, py3.9-3.12)
 except ImportError:
     try:
-        import tensorflow as tf
-        Interpreter = tf.lite.Interpreter
+        from tflite_runtime.interpreter import Interpreter  # tflite-runtime fallback
     except ImportError:
-        Interpreter = None
+        try:
+            import tensorflow as tf
+            Interpreter = tf.lite.Interpreter                # TF full fallback
+        except ImportError:
+            Interpreter = None
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -106,7 +109,8 @@ def load_mask_model():
 
 
 # ── Inference ─────────────────────────────────────────────────────────────────
-def detect_and_predict(img_rgb: np.ndarray, face_net, interp, in_det, out_det):
+def detect_and_predict(img_rgb: np.ndarray, face_net, interp, in_det, out_det,
+                       conf_threshold: float = FACE_CONF):
     """
     img_rgb : uint8 RGB numpy array
     Returns : list of (x1,y1,x2,y2, class_idx, confidence, probs)
@@ -122,7 +126,7 @@ def detect_and_predict(img_rgb: np.ndarray, face_net, interp, in_det, out_det):
     results = []
     for i in range(dets.shape[2]):
         conf = float(dets[0, 0, i, 2])
-        if conf < FACE_CONF:
+        if conf < conf_threshold:
             continue
         box = dets[0, 0, i, 3:7] * np.array([w, h, w, h])
         x1, y1, x2, y2 = box.astype(int)
@@ -241,10 +245,8 @@ if img_rgb is not None:
     with col1:
         st.subheader("🖼️ Detection Result")
         with st.spinner("Detecting faces and classifying masks..."):
-            # Apply user confidence threshold
-            global FACE_CONF
-            FACE_CONF = conf_thresh
-            results = detect_and_predict(img_rgb, face_net, interp, in_det, out_det)
+            results = detect_and_predict(img_rgb, face_net, interp, in_det, out_det,
+                                         conf_threshold=conf_thresh)
             annotated = draw_results(img_rgb, results)
 
         st.image(annotated, use_container_width=True)

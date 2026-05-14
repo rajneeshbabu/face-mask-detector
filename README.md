@@ -1,43 +1,46 @@
-# Face Mask Detector
+# 😷 Face Mask Detector
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://python.org)
-[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange)](https://tensorflow.org)
+[![Python](https://img.shields.io/badge/Python-3.11-blue)](https://python.org)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.35%2B-FF4B4B)](https://streamlit.io)
 [![OpenCV](https://img.shields.io/badge/OpenCV-4.8%2B-green)](https://opencv.org)
 [![License](https://img.shields.io/badge/License-MIT-brightgreen)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit%20Cloud-FF4B4B)](https://rajneeshbabu-face-mask-detector.streamlit.app)
 
-Real-time 3-class face mask detection using your webcam. Detects faces with an SSD deep learning model and classifies mask usage with a fine-tuned EfficientNetB0.
+Real-time 3-class face mask detection in your browser. Upload an image or use your webcam — AI detects faces with an SSD deep learning model and classifies mask usage with a fine-tuned EfficientNetB0 (98.33% accuracy).
+
+🔗 **[Live Demo →](https://rajneeshbabu-face-mask-detector.streamlit.app)**
 
 ---
 
 ## Classes
 
-| Label | Description |
-|---|---|
-| **Mask On** | Face mask worn correctly over nose and mouth |
-| **Mask Worn Incorrectly** | Mask on chin, neck, or below the nose |
-| **No Mask** | No face mask present |
+| Label | Emoji | Description |
+|---|---|---|
+| **Mask On** | ✅ | Face mask worn correctly over nose and mouth |
+| **Mask Incorrect** | ⚠️ | Mask on chin, neck, or below the nose |
+| **No Mask** | ❌ | No face mask present |
 
 ---
 
 ## How It Works
 
 ```
-Webcam frame
-     |
-     v
-SSD Face Detector (res10_300x300 Caffe model)
-     |
-     v
-Crop each detected face
-     |
-     v
+Image (upload or webcam)
+         |
+         v
+OpenCV SSD Face Detector (res10_300x300 Caffe model)
+         |
+         v
+Crop each detected face → resize to 224×224
+         |
+         v
 EfficientNetB0 TFLite FP16 — 3-class classification
-     |
-     v
-Draw bounding box + label on frame
-     |
-     v
-Live OpenCV window  (press Q to quit)
+         |
+         v
+Draw bounding box + confidence label (PIL)
+         |
+         v
+Display result + download button (Streamlit)
 ```
 
 ---
@@ -50,27 +53,27 @@ Live OpenCV window  (press Q to quit)
 | MobileNetV2 | 84.81% | 9.5 MB | 155 s |
 | **EfficientNetB0** | **98.33%** | **8.4 MB** | 205 s |
 
-**Winner: EfficientNetB0** — deployed as TFLite FP16 (8.4 MB).
+**Winner: EfficientNetB0** — deployed as TFLite FP16 (8.4 MB) via `ai-edge-litert`.
 
 ---
 
 ## Architecture
 
 ```
-Input (224x224, RGB, [0-255])
-     |
-     v
+Input (224×224, RGB, [0–255])
+         |
+         v
 Data Augmentation (flip, rotate, zoom, brightness, contrast)
-     |
-     v
-EfficientNetB0 Backbone — ImageNet pretrained, preprocesses internally
-     |
-     v
-GlobalAveragePooling2D -> BatchNorm -> Dropout(0.4)
-Dense(256, swish, L2) -> Dropout(0.2)
-     |
-     v
-Dense(3, softmax) -> [with_mask | mask_weared_incorrect | without_mask]
+         |
+         v
+EfficientNetB0 Backbone — ImageNet pretrained (preprocesses internally)
+         |
+         v
+GlobalAveragePooling2D → BatchNorm → Dropout(0.4)
+Dense(256, swish, L2) → Dropout(0.2)
+         |
+         v
+Dense(3, softmax) → [Mask On | Mask Incorrect | No Mask]
 ```
 
 ### Two-Phase Training
@@ -89,41 +92,35 @@ Dense(3, softmax) -> [with_mask | mask_weared_incorrect | without_mask]
 
 ```
 face-mask-detector/
-├── app.py                        # main app — run this for real-time detection
-├── requirements.txt
+├── app.py                        # Streamlit web app
+├── requirements.txt              # Python dependencies
+├── packages.txt                  # apt packages (libgl1, libglib2.0-0t64)
+├── runtime.txt                   # Python 3.11 (set in Streamlit App Settings)
 ├── README.md
-├── facemask-training.ipynb       # full training notebook (run on Kaggle)
-├── train_optimized.py            # standalone training script
+├── facemask-training.ipynb       # Full training notebook (run on Kaggle)
+├── train_optimized.py            # Standalone training script
 ├── face_detector/
 │   ├── deploy.prototxt           # SSD face detector config
-│   └── res10_300x300_ssd_iter_140000.caffemodel   # SSD face detector weights
+│   └── res10_300x300_ssd_iter_140000.caffemodel
 └── models/
-    ├── face_mask_fp16.tflite     # deployment model (8.4 MB)  ← used by app.py
+    ├── face_mask_fp16.tflite     # Deployment model (8.4 MB)  ← used by app.py
     ├── face_mask_efficientnet.keras
     ├── best_model.keras
-    ├── comparison_results.json
-    ├── comparison_chart.png
-    ├── training_curves.png
-    ├── confusion_matrix.png
-    ├── prediction_samples.png
-    ├── class_distribution.png
-    ├── benchmark_curves.png
-    ├── augmentation_preview.png
-    └── sample_images.png
+    └── *.png                     # Training charts
 ```
 
 ---
 
-## Setup and Run
+## Run Locally
 
-### Step 1 — Clone the repo
+### Step 1 — Clone
 
 ```bash
 git clone https://github.com/rajneeshbabu/face-mask-detector.git
 cd face-mask-detector
 ```
 
-### Step 2 — Create a virtual environment
+### Step 2 — Create virtual environment
 
 ```bash
 python -m venv .venv
@@ -135,27 +132,37 @@ source .venv/bin/activate        # macOS / Linux
 
 ```bash
 pip install -r requirements.txt
-pip install tensorflow            # skip if already installed
 ```
 
-### Step 4 — Run the detector
+### Step 4 — Run the app
 
 ```bash
-python app.py
+streamlit run app.py
 ```
 
-A window opens showing your webcam feed with live detection. Press **Q** to quit.
+Open [http://localhost:8501](http://localhost:8501) in your browser.
+
+---
+
+## Deploy to Streamlit Cloud
+
+1. Push this repo to GitHub
+2. Go to [share.streamlit.io](https://share.streamlit.io) and click **New app**
+3. Select your repo + `app.py`
+4. **Important:** In App Settings → General → **Python version: 3.11**
+   *(Streamlit Cloud currently ignores `runtime.txt` — must be set manually)*
+5. Click **Deploy**
 
 ---
 
 ## Train From Scratch (Kaggle)
 
 1. Go to [kaggle.com](https://kaggle.com) and create a new notebook
-2. Add the dataset: [vijaykumar1799/face-mask-detection](https://www.kaggle.com/datasets/vijaykumar1799/face-mask-detection)
+2. Add dataset: [vijaykumar1799/face-mask-detection](https://www.kaggle.com/datasets/vijaykumar1799/face-mask-detection)
 3. Upload `facemask-training.ipynb` and click **Run All**
-4. Download the outputs from `/kaggle/working/` — copy them into `models/`
+4. Download outputs from `/kaggle/working/` and copy into `models/`
 
-The notebook runs a full two-phase EfficientNetB0 training and exports:
+The notebook trains a full two-phase EfficientNetB0 and exports:
 - `face_mask_efficientnet.keras` — full Keras model
 - `face_mask_fp16.tflite` — quantized deployment model (used by app.py)
 
@@ -163,7 +170,7 @@ The notebook runs a full two-phase EfficientNetB0 training and exports:
 
 ## Dataset
 
-- **Source**: [vijaykumar1799/face-mask-detection](https://www.kaggle.com/datasets/vijaykumar1799/face-mask-detection) on Kaggle
+- **Source**: [vijaykumar1799/face-mask-detection](https://www.kaggle.com/datasets/vijaykumar1799/face-mask-detection)
 - **Classes**: `with_mask`, `mask_weared_incorrect`, `without_mask`
 - **Total**: ~3,800 labeled face images
 - **Split**: 80% train / 20% validation (stratified, class-balanced)
@@ -176,4 +183,4 @@ MIT License — free to use, modify, and distribute.
 
 ---
 
-*Built with TensorFlow · EfficientNetB0 · OpenCV SSD · imutils*
+*Built with EfficientNetB0 · ai-edge-litert · OpenCV SSD · Streamlit*
