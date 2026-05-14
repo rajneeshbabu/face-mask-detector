@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Face Mask Detector — Rajneesh Babu</title>
+  <style>
+    :root{
+      --bg:#050810;--bg2:#0d1117;--bg3:#161b22;--border:#21262d;
+      --accent:#6366f1;--accent2:#a78bfa;--green:#34d399;
+      --orange:#f59e0b;--red:#f87171;--cyan:#22d3ee;
+      --text:#e6edf3;--muted:#7d8590;--r:12px;
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    body{background:var(--bg);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',sans-serif;
+      line-height:1.65;overflow-x:hidden;}
+    ::-webkit-scrollbar{width:5px;}
+    ::-webkit-scrollbar-track{background:var(--bg);}
+    ::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px;}
+
+    /* NAV */
+    nav{position:fixed;top:0;left:0;right:0;z-index:200;
+      background:rgba(5,8,16,0.85);backdrop-filter:blur(20px);
+      border-bottom:1px solid rgba(99,102,241,0.12);
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 2.5rem;height:56px;}
+    .nav-logo{font-weight:800;font-size:.95rem;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .nav-right{display:flex;gap:1rem;align-items:center;}
+    .nav-link{color:var(--muted);text-decoration:none;font-size:.83rem;font-weight:500;transition:color .2s;}
+    .nav-link:hover{color:var(--text);}
+    .nav-btn{padding:.38rem 1rem;border-radius:7px;font-size:.82rem;font-weight:600;
+      text-decoration:none;background:linear-gradient(135deg,var(--accent),var(--accent2));
+      color:#fff;transition:all .2s;}
+    .nav-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,102,241,.35);}
+
+    /* HERO */
+    .hero{min-height:100vh;display:flex;align-items:center;justify-content:center;
+      text-align:center;padding:5rem 1.5rem 3rem;position:relative;overflow:hidden;}
+    .hero-bg{position:absolute;inset:0;
+      background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(99,102,241,.13) 0%,transparent 70%);
+      pointer-events:none;}
+    .badge{display:inline-flex;align-items:center;gap:.5rem;
+      background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);
+      border-radius:20px;padding:.3rem 1rem;font-size:.76rem;font-weight:700;
+      color:var(--green);margin-bottom:1.5rem;letter-spacing:.5px;}
+    .dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.85);}}
+    h1{font-size:clamp(2.4rem,6vw,4rem);font-weight:900;letter-spacing:-2px;line-height:1.08;margin-bottom:1rem;}
+    h1 .grad{background:linear-gradient(135deg,var(--accent),var(--accent2),var(--cyan));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .hero-sub{font-size:1.05rem;color:var(--muted);max-width:560px;margin:0 auto 2rem;line-height:1.8;}
+    .hero-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:2.5rem;}
+    .btn{padding:.7rem 1.6rem;border-radius:9px;font-weight:700;font-size:.9rem;
+      text-decoration:none;display:inline-flex;align-items:center;gap:.5rem;
+      transition:all .25s;}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(99,102,241,.4);}
+    .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}
+    .btn-ghost:hover{border-color:var(--accent);color:var(--accent2);transform:translateY(-2px);}
+
+    /* CLASS PILLS */
+    .class-pills{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;}
+    .cpill{display:inline-flex;align-items:center;gap:.45rem;padding:.4rem 1rem;
+      border-radius:20px;font-size:.82rem;font-weight:700;border:1px solid;}
+    .cpill.green{color:var(--green);border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.07);}
+    .cpill.orange{color:var(--orange);border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.07);}
+    .cpill.red{color:var(--red);border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.07);}
+
+    /* LAYOUT */
+    .container{max-width:1040px;margin:0 auto;padding:0 1.5rem;}
+    section{padding:5.5rem 0;}
+
+    /* SECTION HEADING */
+    .sec-label{font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+      color:var(--accent2);margin-bottom:.4rem;display:flex;align-items:center;gap:.5rem;}
+    .sec-label::before{content:'';width:18px;height:2px;background:var(--accent2);}
+    h2{font-size:clamp(1.6rem,3vw,2.2rem);font-weight:800;letter-spacing:-1px;margin-bottom:.5rem;}
+    .sec-sub{color:var(--muted);font-size:.93rem;margin-bottom:2.5rem;max-width:520px;}
+
+    /* STATS ROW */
+    .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:3rem;}
+    @media(max-width:640px){.stats-row{grid-template-columns:repeat(2,1fr);}}
+    .stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+      padding:1.3rem 1rem;text-align:center;
+      transition:border-color .25s,transform .25s;}
+    .stat:hover{border-color:var(--accent);transform:translateY(-3px);}
+    .stat-val{font-size:1.8rem;font-weight:900;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;}
+    .stat-lbl{font-size:.72rem;color:var(--muted);margin-top:.3rem;}
+
+    /* PIPELINE */
+    .pipeline{display:flex;align-items:center;gap:0;flex-wrap:wrap;justify-content:center;margin:2rem 0;}
+    .pipe-step{background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+      padding:.7rem 1.1rem;font-size:.82rem;font-weight:600;text-align:center;
+      transition:border-color .2s,transform .2s;}
+    .pipe-step:hover{border-color:var(--accent);transform:translateY(-2px);}
+    .pipe-arrow{color:var(--accent2);font-size:1.1rem;margin:0 .4rem;flex-shrink:0;}
+    .pipe-step span{display:block;font-size:.68rem;color:var(--muted);margin-top:.2rem;}
+
+    /* MODEL TABLE */
+    .model-table{width:100%;border-collapse:collapse;border-radius:var(--r);overflow:hidden;
+      border:1px solid var(--border);}
+    .model-table th{background:var(--bg3);padding:.85rem 1.1rem;text-align:left;
+      font-size:.78rem;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;}
+    .model-table td{padding:.85rem 1.1rem;border-top:1px solid var(--border);font-size:.88rem;}
+    .model-table tr:hover td{background:rgba(99,102,241,.04);}
+    .model-table tr.winner td{background:rgba(52,211,153,.05);}
+    .winner-badge{display:inline-flex;align-items:center;gap:.35rem;
+      background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);
+      color:var(--green);font-size:.72rem;font-weight:700;padding:.15rem .55rem;border-radius:5px;}
+    .acc-bar-wrap{display:flex;align-items:center;gap:.7rem;}
+    .acc-bar{height:6px;border-radius:3px;background:var(--bg3);flex:1;overflow:hidden;}
+    .acc-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+    .acc-fill.green{background:linear-gradient(90deg,var(--green),var(--cyan));}
+
+    /* ARCHITECTURE */
+    .arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;}
+    @media(max-width:700px){.arch-grid{grid-template-columns:1fr;}}
+    .arch-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.4rem;}
+    .arch-card h4{font-size:.82rem;font-weight:700;color:var(--accent2);margin-bottom:.8rem;
+      letter-spacing:.5px;text-transform:uppercase;}
+    .arch-row{display:flex;justify-content:space-between;align-items:center;
+      padding:.45rem 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.85rem;}
+    .arch-row:last-child{border-bottom:none;}
+    .arch-key{color:var(--muted);}
+    .arch-val{font-weight:600;color:var(--text);}
+    .arch-val.green{color:var(--green);}
+    .arch-val.cyan{color:var(--cyan);}
+
+    /* IMAGES */
+    .img-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+    @media(max-width:640px){.img-grid{grid-template-columns:1fr;}}
+    .img-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;
+      transition:border-color .25s,transform .3s;}
+    .img-card:hover{border-color:rgba(99,102,241,.4);transform:translateY(-4px);}
+    .img-card img{width:100%;display:block;object-fit:cover;aspect-ratio:4/3;}
+    .img-label{padding:.6rem .8rem;font-size:.75rem;color:var(--muted);font-weight:500;}
+
+    /* APPS */
+    .apps-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;}
+    @media(max-width:640px){.apps-grid{grid-template-columns:1fr;}}
+    .app-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+      padding:1.6rem;transition:border-color .25s,transform .3s,box-shadow .25s;}
+    .app-card:hover{border-color:rgba(99,102,241,.4);transform:translateY(-4px);
+      box-shadow:0 12px 30px rgba(0,0,0,.3);}
+    .app-icon{font-size:2rem;margin-bottom:.8rem;}
+    .app-title{font-size:1rem;font-weight:700;margin-bottom:.4rem;}
+    .app-desc{color:var(--muted);font-size:.86rem;line-height:1.7;margin-bottom:1.1rem;}
+    .app-features{list-style:none;margin-bottom:1.2rem;}
+    .app-features li{color:var(--muted);font-size:.83rem;padding:.2rem 0 .2rem 1.1rem;position:relative;}
+    .app-features li::before{content:'›';position:absolute;left:0;color:var(--accent);}
+    .app-features li strong{color:var(--text);}
+
+    /* TECH TAGS */
+    .tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem;}
+    .tag{padding:.2rem .6rem;border-radius:5px;font-size:.72rem;font-weight:600;
+      background:rgba(99,102,241,.09);border:1px solid rgba(99,102,241,.18);color:var(--accent2);}
+    .tag.g{background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.2);color:var(--green);}
+    .tag.o{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.2);color:var(--orange);}
+    .tag.c{background:rgba(34,211,238,.08);border-color:rgba(34,211,238,.2);color:var(--cyan);}
+
+    /* CTA */
+    #cta{background:var(--bg2);}
+    .cta-card{background:linear-gradient(135deg,rgba(99,102,241,.09),rgba(167,139,250,.04));
+      border:1px solid rgba(99,102,241,.2);border-radius:18px;padding:3.5rem;text-align:center;}
+    .cta-card h3{font-size:1.9rem;font-weight:800;margin-bottom:.7rem;}
+    .cta-card p{color:var(--muted);margin-bottom:2rem;font-size:.96rem;}
+
+    /* FOOTER */
+    footer{border-top:1px solid var(--border);padding:2rem;text-align:center;
+      color:var(--muted);font-size:.8rem;}
+    footer a{color:var(--accent2);text-decoration:none;}
+
+    /* REVEAL */
+    .reveal{opacity:0;transform:translateY(28px);
+      transition:opacity .7s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1);}
+    .reveal.visible{opacity:1;transform:none;}
+    .d1{transition-delay:.06s;}.d2{transition-delay:.12s;}.d3{transition-delay:.18s;}
+    .d4{transition-delay:.24s;}.d5{transition-delay:.30s;}.d6{transition-delay:.36s;}
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">😷 Face Mask Detector</div>
+  <div class="nav-right">
+    <a href="#how-it-works" class="nav-link">How It Works</a>
+    <a href="#models" class="nav-link">Models</a>
+    <a href="#apps" class="nav-link">Apps</a>
+    <a href="https://face-mask-detector-hdzvzy2kpppk3cu7m46byj.streamlit.app" target="_blank" class="nav-btn">
+      🚀 Launch App
+    </a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div>
+    <div class="badge"><span class="dot"></span> LIVE ON STREAMLIT CLOUD</div>
+    <h1>Real-Time <span class="grad">Face Mask</span><br>Detection</h1>
+    <p class="hero-sub">
+      3-class classification — Mask On, Mask Incorrect, No Mask —
+      powered by EfficientNetB0 TFLite at <strong style="color:var(--green)">98.33% accuracy</strong>.
+      Upload an image or use your webcam, directly in the browser.
+    </p>
+    <div class="hero-btns">
+      <a href="https://face-mask-detector-hdzvzy2kpppk3cu7m46byj.streamlit.app" target="_blank" class="btn btn-primary">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg>
+        Launch Live App
+      </a>
+      <a href="https://github.com/rajneeshbabu/face-mask-detector" target="_blank" class="btn btn-ghost">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        View on GitHub
+      </a>
+    </div>
+    <div class="class-pills">
+      <span class="cpill green">✅ Mask On</span>
+      <span class="cpill orange">⚠️ Mask Incorrect</span>
+      <span class="cpill red">❌ No Mask</span>
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<section style="padding:2rem 0 4rem;">
+  <div class="container">
+    <div class="stats-row reveal">
+      <div class="stat">
+        <div class="stat-val">98.33%</div>
+        <div class="stat-lbl">Val Accuracy</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">3</div>
+        <div class="stat-lbl">Classes Detected</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">8.4 MB</div>
+        <div class="stat-lbl">TFLite Model Size</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">3.8K</div>
+        <div class="stat-lbl">Training Images</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how-it-works" style="background:var(--bg2);">
+  <div class="container">
+    <div class="reveal">
+      <div class="sec-label">Pipeline</div>
+      <h2>How It Works</h2>
+      <p class="sec-sub">Two-stage inference — face detection followed by mask classification, all running in the browser.</p>
+    </div>
+    <div class="pipeline reveal">
+      <div class="pipe-step">📷 Input<span>Image / Webcam</span></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">🔍 SSD Detector<span>res10_300x300</span></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">✂️ Face Crop<span>224 × 224 px</span></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">🧠 EfficientNetB0<span>TFLite FP16</span></div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">🏷️ Result<span>Class + Confidence</span></div>
+    </div>
+
+    <div class="arch-grid reveal">
+      <div class="arch-card">
+        <h4>Face Detector</h4>
+        <div class="arch-row"><span class="arch-key">Model</span><span class="arch-val">OpenCV SSD (Caffe)</span></div>
+        <div class="arch-row"><span class="arch-key">Input size</span><span class="arch-val">300 × 300</span></div>
+        <div class="arch-row"><span class="arch-key">Confidence threshold</span><span class="arch-val cyan">0.5 (adjustable)</span></div>
+        <div class="arch-row"><span class="arch-key">Multi-face</span><span class="arch-val green">✓ Supported</span></div>
+        <div class="arch-row"><span class="arch-key">Backend</span><span class="arch-val">cv2.dnn (CPU)</span></div>
+      </div>
+      <div class="arch-card">
+        <h4>Mask Classifier</h4>
+        <div class="arch-row"><span class="arch-key">Backbone</span><span class="arch-val">EfficientNetB0</span></div>
+        <div class="arch-row"><span class="arch-key">Format</span><span class="arch-val">TFLite FP16</span></div>
+        <div class="arch-row"><span class="arch-key">Input</span><span class="arch-val">224 × 224 RGB</span></div>
+        <div class="arch-row"><span class="arch-key">Output</span><span class="arch-val">3-class softmax</span></div>
+        <div class="arch-row"><span class="arch-key">Accuracy</span><span class="arch-val green">98.33%</span></div>
+      </div>
+      <div class="arch-card">
+        <h4>Phase 1 Training</h4>
+        <div class="arch-row"><span class="arch-key">Goal</span><span class="arch-val">Feature extraction</span></div>
+        <div class="arch-row"><span class="arch-key">Backbone</span><span class="arch-val">Frozen</span></div>
+        <div class="arch-row"><span class="arch-key">Optimizer</span><span class="arch-val">Adam 1e-3</span></div>
+        <div class="arch-row"><span class="arch-key">Loss</span><span class="arch-val">CatCE + smoothing 0.1</span></div>
+        <div class="arch-row"><span class="arch-key">Class weights</span><span class="arch-val green">Balanced</span></div>
+      </div>
+      <div class="arch-card">
+        <h4>Phase 2 Fine-tuning</h4>
+        <div class="arch-row"><span class="arch-key">Goal</span><span class="arch-val">Fine-tuning</span></div>
+        <div class="arch-row"><span class="arch-key">Backbone</span><span class="arch-val">Top 15 layers unfrozen</span></div>
+        <div class="arch-row"><span class="arch-key">Optimizer</span><span class="arch-val">Cosine Decay 5e-6</span></div>
+        <div class="arch-row"><span class="arch-key">Loss</span><span class="arch-val">CatCE + smoothing 0.05</span></div>
+        <div class="arch-row"><span class="arch-key">Class weights</span><span class="arch-val green">Balanced</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MODEL COMPARISON -->
+<section id="models">
+  <div class="container">
+    <div class="reveal">
+      <div class="sec-label">Benchmarks</div>
+      <h2>Model Comparison</h2>
+      <p class="sec-sub">8-epoch benchmark across three architectures on the same dataset and training setup.</p>
+    </div>
+    <table class="model-table reveal">
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Val Accuracy</th>
+          <th>Size</th>
+          <th>Train Time</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="winner">
+          <td><strong>EfficientNetB0</strong></td>
+          <td>
+            <div class="acc-bar-wrap">
+              <div class="acc-bar"><div class="acc-fill green" style="width:98.33%"></div></div>
+              <strong style="color:var(--green)">98.33%</strong>
+            </div>
+          </td>
+          <td>8.4 MB</td>
+          <td>205 s</td>
+          <td><span class="winner-badge">✓ Deployed</span></td>
+        </tr>
+        <tr>
+          <td>YOLOv8n-cls (TF)</td>
+          <td>
+            <div class="acc-bar-wrap">
+              <div class="acc-bar"><div class="acc-fill" style="width:94.88%"></div></div>
+              94.88%
+            </div>
+          </td>
+          <td>13.6 MB</td>
+          <td>182 s</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>MobileNetV2</td>
+          <td>
+            <div class="acc-bar-wrap">
+              <div class="acc-bar"><div class="acc-fill" style="width:84.81%"></div></div>
+              84.81%
+            </div>
+          </td>
+          <td>9.5 MB</td>
+          <td>155 s</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:2.5rem;" class="reveal">
+      <div class="img-grid">
+        <div class="img-card">
+          <img src="models/training_curves.png" alt="Training Curves" loading="lazy">
+          <div class="img-label">Training & Validation Curves</div>
+        </div>
+        <div class="img-card">
+          <img src="models/confusion_matrix.png" alt="Confusion Matrix" loading="lazy">
+          <div class="img-label">Confusion Matrix</div>
+        </div>
+        <div class="img-card">
+          <img src="models/comparison_chart.png" alt="Model Comparison" loading="lazy">
+          <div class="img-label">Model Comparison Chart</div>
+        </div>
+        <div class="img-card">
+          <img src="models/prediction_samples.png" alt="Predictions" loading="lazy">
+          <div class="img-label">Sample Predictions</div>
+        </div>
+        <div class="img-card">
+          <img src="models/class_distribution.png" alt="Class Distribution" loading="lazy">
+          <div class="img-label">Class Distribution</div>
+        </div>
+        <div class="img-card">
+          <img src="models/augmentation_preview.png" alt="Augmentation" loading="lazy">
+          <div class="img-label">Data Augmentation Preview</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- APPS -->
+<section id="apps" style="background:var(--bg2);">
+  <div class="container">
+    <div class="reveal">
+      <div class="sec-label">Applications</div>
+      <h2>Two Ways to Run</h2>
+      <p class="sec-sub">Browser-based for sharing, or native OpenCV window for real-time local detection.</p>
+    </div>
+    <div class="apps-grid">
+      <div class="app-card reveal d1">
+        <div class="app-icon">🌐</div>
+        <div class="app-title">Streamlit Web App — app.py</div>
+        <div class="app-desc">Runs entirely in your browser. No installation required via the live demo link.</div>
+        <ul class="app-features">
+          <li>Upload <strong>JPG / PNG / WEBP</strong> image</li>
+          <li><strong>Browser webcam</strong> capture via st.camera_input</li>
+          <li>Per-face <strong>confidence bars</strong> for all 3 classes</li>
+          <li><strong>Download</strong> annotated result image</li>
+          <li>Deployed on <strong>Streamlit Cloud</strong></li>
+        </ul>
+        <div class="tags">
+          <span class="tag">Streamlit</span><span class="tag">ai-edge-litert</span>
+          <span class="tag g">Python 3.11</span><span class="tag c">Browser Webcam</span>
+        </div>
+        <div style="margin-top:1.2rem;">
+          <a href="https://face-mask-detector-hdzvzy2kpppk3cu7m46byj.streamlit.app" target="_blank" class="btn btn-primary" style="font-size:.83rem;padding:.55rem 1.2rem;">
+            🚀 Launch App
+          </a>
+        </div>
+      </div>
+
+      <div class="app-card reveal d2">
+        <div class="app-icon">🎥</div>
+        <div class="app-title">Live Webcam — app2.py</div>
+        <div class="app-desc">Native OpenCV window for real-time continuous detection. Runs locally, fully offline.</div>
+        <ul class="app-features">
+          <li>Live <strong>webcam feed</strong> — processes every frame</li>
+          <li><strong>FPS counter</strong>, face count, per-class counts on screen</li>
+          <li>Press <strong>S</strong> to save screenshot · <strong>Q</strong> to quit</li>
+          <li>Smooth FPS with <strong>exponential moving average</strong></li>
+          <li>Semi-transparent bounding box overlay</li>
+        </ul>
+        <div class="tags">
+          <span class="tag">OpenCV</span><span class="tag">TensorFlow</span>
+          <span class="tag o">Local Only</span><span class="tag g">Real-time</span>
+        </div>
+        <div style="margin-top:1.2rem;">
+          <a href="https://github.com/rajneeshbabu/face-mask-detector" target="_blank" class="btn btn-ghost" style="font-size:.83rem;padding:.55rem 1.2rem;">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            View Source
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DATASET & STACK -->
+<section>
+  <div class="container">
+    <div class="reveal">
+      <div class="sec-label">Dataset & Stack</div>
+      <h2>Built With</h2>
+    </div>
+    <div class="arch-grid reveal">
+      <div class="arch-card">
+        <h4>Dataset</h4>
+        <div class="arch-row"><span class="arch-key">Source</span><span class="arch-val">Kaggle (vijaykumar1799)</span></div>
+        <div class="arch-row"><span class="arch-key">Total images</span><span class="arch-val">~3,800</span></div>
+        <div class="arch-row"><span class="arch-key">Classes</span><span class="arch-val">3 (balanced)</span></div>
+        <div class="arch-row"><span class="arch-key">Split</span><span class="arch-val">80 / 20 stratified</span></div>
+        <div class="arch-row"><span class="arch-key">Class weights</span><span class="arch-val green">sklearn balanced</span></div>
+      </div>
+      <div class="arch-card">
+        <h4>Tech Stack</h4>
+        <div class="arch-row"><span class="arch-key">Training</span><span class="arch-val">TensorFlow / Keras</span></div>
+        <div class="arch-row"><span class="arch-key">Deployment model</span><span class="arch-val">TFLite FP16</span></div>
+        <div class="arch-row"><span class="arch-key">Inference (cloud)</span><span class="arch-val cyan">ai-edge-litert</span></div>
+        <div class="arch-row"><span class="arch-key">Face detection</span><span class="arch-val">OpenCV DNN (Caffe)</span></div>
+        <div class="arch-row"><span class="arch-key">Web app</span><span class="arch-val">Streamlit</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="container">
+    <div class="cta-card reveal">
+      <h3>Try It Now — No Install Needed</h3>
+      <p>Upload a photo or use your webcam to detect mask usage instantly.</p>
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+        <a href="https://face-mask-detector-hdzvzy2kpppk3cu7m46byj.streamlit.app" target="_blank" class="btn btn-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg>
+          Launch Live App
+        </a>
+        <a href="https://github.com/rajneeshbabu/face-mask-detector" target="_blank" class="btn btn-ghost">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub Repo
+        </a>
+        <a href="https://rajneeshbabu.github.io" class="btn btn-ghost">← Back to Portfolio</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    Built by <a href="https://rajneeshbabu.github.io">Rajneesh Babu</a> · IISc Bengaluru ·
+    <a href="https://github.com/rajneeshbabu/face-mask-detector">GitHub</a>
+  </div>
+</footer>
+
+<script>
+/* Scroll reveal */
+(function(){
+  const io = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('visible'); io.unobserve(e.target); }});
+  },{threshold:.1});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+})();
+/* Nav scroll */
+window.addEventListener('scroll',()=>{
+  document.querySelector('nav').style.background =
+    scrollY > 40 ? 'rgba(5,8,16,0.97)' : 'rgba(5,8,16,0.85)';
+});
+</script>
+</body>
+</html>
